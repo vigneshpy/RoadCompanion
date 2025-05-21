@@ -148,15 +148,8 @@ const PromptInput = () => {
 					boxShadow: "0 12px 24px rgba(0, 0, 0, 0.3)",
 					position: "relative",
 					overflow: "hidden",
-					"&:before": {
-						content: '""',
-						position: "absolute",
-						inset: 0,
-						backgroundImage:
+					backgroundImage:
 							'url("https://www.transparenttextures.com/patterns/dark-tire.png")',
-						opacity: 0.15,
-						zIndex: 1,
-					},
 				}}
 			>
 				{/* Header Section */}
