@@ -4,19 +4,13 @@ import {
 	TextField,
 	Button,
 	CircularProgress,
-	Alert,
-	AlertTitle,
-	IconButton,
 	Tooltip,
 } from "@mui/material";
 import DirectionsBikeIcon from "@mui/icons-material/DirectionsBike";
-import WarningIcon from "@mui/icons-material/Warning";
-import CloseIcon from "@mui/icons-material/Close";
-import useTripStore from "../store/tripStore";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { memo, useMemo, useState } from "react";
 
-// Custom MUI theme with biking aesthetic
+// Custom MUI theme with biking aesthetic - moved before component
 const theme = createTheme({
 	palette: {
 		primary: {
@@ -112,31 +106,45 @@ const theme = createTheme({
 	},
 });
 
+interface TripDetails {
+	tripPrompt: string;
+	isLoading: boolean;
+	isError?: boolean;
+}
+
 const PromptInput = () => {
-	const { tripPrompt, setTripPrompt, planTripFromPrompt, isLoading, error } =
-		useTripStore();
-	const [showError, setShowError] = useState(!!error);
-
-	// Handle form submission
-	const handleSubmit = (e) => {
-		e.preventDefault();
-		setShowError(false);
-		planTripFromPrompt();
-	};
-
-	// Handle clear input
-	const handleClear = () => {
-		setTripPrompt("");
-		setShowError(false);
-	};
-
-	// Memoize theme to prevent re-creation
 	const memoizedTheme = useMemo(() => theme, []);
+	const [tripDetails, setTripDetails] = useState<TripDetails>({
+		tripPrompt: '',
+		isLoading: false,
+		isError: false
+	});
+
+	const handleChange = (prompt: string) => {
+		setTripDetails(prev => ({
+			...prev,
+			tripPrompt: prompt
+		}));
+	};
+
+	const handleSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		// Add your submit logic here
+		console.log("Submitting trip:", tripDetails.tripPrompt);
+	};
+
+	const handleClear = () => {
+		setTripDetails(prev => ({
+			...prev,
+			tripPrompt: ''
+		}));
+	};
 
 	// Character counter
 	const maxChars = 500;
-	const charCount = tripPrompt.length;
-	/* This is mostly intended for prototyping; please download the pattern and re-host for production environments. Thank you! */ return (
+	const charCount = tripDetails.tripPrompt.length;
+
+	return (
 		<ThemeProvider theme={memoizedTheme}>
 			<Box
 				sx={{
@@ -149,7 +157,7 @@ const PromptInput = () => {
 					position: "relative",
 					overflow: "hidden",
 					backgroundImage:
-							'url("https://www.transparenttextures.com/patterns/dark-tire.png")',
+						'url("https://www.transparenttextures.com/patterns/dark-tire.png")',
 				}}
 			>
 				{/* Header Section */}
@@ -170,16 +178,15 @@ const PromptInput = () => {
 							}}
 							aria-hidden="true"
 						/>
-						Bike Trip Planner
+						Trip Planner
 					</Typography>
 				</Box>
 
 				{/* Instruction Text */}
 				<Typography variant="body1" mb={4} sx={{ zIndex: 2 }}>
-					Craft your perfect bike adventure! Try something like:{" "}
+					Craft your perfect adventure! Try something like:{" "}
 					<Box component="span" sx={{ fontStyle: "italic", color: "#facc15" }}>
-						"Plan a mountain bike ride from Denver to Moab with rugged trails,
-						max 50 km/day."
+						"Plan a bike ride from Chennai to Sivakasi with hour break"
 					</Box>
 				</Typography>
 
@@ -190,11 +197,7 @@ const PromptInput = () => {
 							variant="contained"
 							color="secondary"
 							size="small"
-							onClick={() =>
-								setTripPrompt(
-									"Plan a mountain bike trip through the Rockies with rugged trails, max 50 km/day."
-								)
-							}
+							onClick={() => handleChange("Plan a bike trip from chennai to sivakasi take a break for every 3 hour")}
 							sx={{
 								borderRadius: "12px",
 								fontWeight: 600,
@@ -207,7 +210,7 @@ const PromptInput = () => {
 							}}
 							aria-label="Select mountain bike adventure prompt"
 						>
-							Mountain Adventure
+							Bike Trip
 						</Button>
 					</Tooltip>
 					<Tooltip title="Ride along scenic coastal roads" placement="top">
@@ -216,8 +219,8 @@ const PromptInput = () => {
 							color="secondary"
 							size="small"
 							onClick={() =>
-								setTripPrompt(
-									"Plan a road bike trip from Seattle to Portland, max 100 km/day, with coastal views."
+								handleChange(
+									"Plan a car trip from chennai to goa take a break at tea shop for every 3 hour"
 								)
 							}
 							sx={{
@@ -232,7 +235,7 @@ const PromptInput = () => {
 							}}
 							aria-label="Select coastal road trip prompt"
 						>
-							Coastal Cruise
+							Car Trip
 						</Button>
 					</Tooltip>
 				</Box>
@@ -245,8 +248,8 @@ const PromptInput = () => {
 							fullWidth
 							multiline
 							rows={5}
-							value={tripPrompt}
-							onChange={(e) => setTripPrompt(e.target.value)}
+							value={tripDetails.tripPrompt}
+							onChange={(e) => handleChange(e.target.value)}
 							placeholder="Describe your bike trip, e.g., 'Ride from San Francisco to Los Angeles along coastal trails, max 100 km/day, with camping spots.'"
 							required
 							sx={{
@@ -275,10 +278,10 @@ const PromptInput = () => {
 							type="submit"
 							variant="contained"
 							color="primary"
-							disabled={isLoading || !tripPrompt.trim()}
+							disabled={tripDetails.isLoading || !tripDetails.tripPrompt.trim()}
 							fullWidth
 							startIcon={
-								isLoading ? (
+								tripDetails.isLoading ? (
 									<CircularProgress
 										size={18}
 										sx={{ color: "#000", marginRight: "8px" }}
@@ -304,16 +307,16 @@ const PromptInput = () => {
 								fontSize: "1.1rem",
 							}}
 							aria-label={
-								isLoading ? "Planning your bike trip" : "Plan my bike trip"
+								tripDetails.isLoading ? "Planning your bike trip" : "Plan my bike trip"
 							}
 						>
-							{isLoading ? "Planning Your Ride..." : "Plan My Ride"}
+							{tripDetails.isLoading ? "Planning Your Ride..." : "Plan My Ride"}
 						</Button>
 						<Button
 							variant="outlined"
 							color="secondary"
 							onClick={handleClear}
-							disabled={isLoading || !tripPrompt}
+							disabled={tripDetails.isLoading || !tripDetails.tripPrompt}
 							sx={{
 								flex: 0.5,
 								borderColor: "#facc15",
@@ -329,41 +332,6 @@ const PromptInput = () => {
 						</Button>
 					</Box>
 				</Box>
-
-				{/* Error Message */}
-				{showError && error && (
-					<Alert
-						severity="error"
-						icon={
-							<WarningIcon
-								sx={{ fontSize: "1.25rem", color: "#b91c1c" }}
-								aria-hidden="true"
-							/>
-						}
-						sx={{
-							mt: 3,
-							backgroundColor: "#7f1d1d",
-							color: "#ffffff",
-							borderLeft: "4px solid #b91c1c",
-							borderRadius: "8px",
-							zIndex: 2,
-							position: "relative",
-						}}
-						action={
-							<IconButton
-								aria-label="Dismiss error message"
-								color="inherit"
-								size="small"
-								onClick={() => setShowError(false)}
-							>
-								<CloseIcon fontSize="inherit" />
-							</IconButton>
-						}
-					>
-						<AlertTitle sx={{ display: "none" }}>Error</AlertTitle>
-						{error || "Something went wrong. Please try again."}
-					</Alert>
-				)}
 			</Box>
 		</ThemeProvider>
 	);
