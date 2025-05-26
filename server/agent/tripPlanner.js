@@ -7,7 +7,6 @@ const llm = new ChatOpenAI({
   temperature: 0.7,
   apiKey: process.env.OPEN_API_KEY,
 });
-console.log("key",process.env.OPEN_API_KEY)
 export async function planTrip(prompt) {
   try {
     const message = new HumanMessage(prompt);
