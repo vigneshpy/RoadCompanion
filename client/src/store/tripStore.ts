@@ -69,60 +69,23 @@ const useTripStore = create(
 			try {
 				set({ isLoading: true, error: null });
 
-				const response = await api.post("/trips/plan-from-prompt", {
+				const serverResponse = await api.post("/plan-trip", {
 					prompt: tripPrompt,
 				});
 
+				// The server returns the trip plan in a 'response' field.
+				const tripData = serverResponse.data.response;
+
 				set({
-					route: response.data.route,
-					stops: response.data.stops,
-					weather: response.data.weather,
-					tripDays: response.data.tripDays,
+					route: tripData.route,
+					stops: tripData.stops,
+					weather: tripData.weather,
+					tripDays: tripData.tripDays,
 					// Also update the form fields with extracted data
-					startLocation: response.data.startLocation,
-					endLocation: response.data.endLocation,
-					riderSpeed: response.data.riderSpeed || get().riderSpeed,
-					hoursPerDay: response.data.hoursPerDay || get().hoursPerDay,
-					isLoading: false,
-				});
-			} catch (error) {
-				set({
-					error: error.response?.data?.message || "Failed to plan trip",
-					isLoading: false,
-				});
-			}
-		},
-
-		planTripFromForm: async () => {
-			const {
-				startLocation,
-				endLocation,
-				riderSpeed,
-				hoursPerDay,
-				stopInterval,
-			} = get();
-
-			if (!startLocation || !endLocation) {
-				set({ error: "Please enter both start and end locations" });
-				return;
-			}
-
-			try {
-				set({ isLoading: true, error: null });
-
-				const response = await api.post("/trips/plan", {
-					startLocation,
-					endLocation,
-					riderSpeed,
-					hoursPerDay,
-					stopInterval,
-				});
-
-				set({
-					route: response.data.route,
-					stops: response.data.stops,
-					weather: response.data.weather,
-					tripDays: response.data.tripDays,
+					startLocation: tripData.startLocation,
+					endLocation: tripData.endLocation,
+					riderSpeed: tripData.riderSpeed || get().riderSpeed,
+					hoursPerDay: tripData.hoursPerDay || get().hoursPerDay,
 					isLoading: false,
 				});
 			} catch (error) {
