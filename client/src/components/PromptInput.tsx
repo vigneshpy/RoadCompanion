@@ -5,10 +5,16 @@ import {
 	Button,
 	CircularProgress,
 	Tooltip,
+	Alert,
+	Paper,
+	List,
+	ListItem,
+	ListItemText,
 } from "@mui/material";
 import DirectionsBikeIcon from "@mui/icons-material/DirectionsBike";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { memo, useMemo, useState } from "react";
+import { memo, useMemo } from "react";
+import useTripStore from "../store/tripStore";
 
 // Custom MUI theme with biking aesthetic - moved before component
 const theme = createTheme({
@@ -106,43 +112,33 @@ const theme = createTheme({
 	},
 });
 
-interface TripDetails {
-	tripPrompt: string;
-	isLoading: boolean;
-	isError?: boolean;
-}
-
 const PromptInput = () => {
 	const memoizedTheme = useMemo(() => theme, []);
-	const [tripDetails, setTripDetails] = useState<TripDetails>({
-		tripPrompt: '',
-		isLoading: false,
-		isError: false
-	});
-
-	const handleChange = (prompt: string) => {
-		setTripDetails(prev => ({
-			...prev,
-			tripPrompt: prompt
-		}));
-	};
+	const {
+		tripPrompt,
+		tripPrompt,
+		setTripPrompt,
+		planTripFromPrompt,
+		isLoading,
+		error,
+		route,
+		stops,
+		weather,
+		tripDays,
+	} = useTripStore();
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		// Add your submit logic here
-		console.log("Submitting trip:", tripDetails.tripPrompt);
+		planTripFromPrompt();
 	};
 
 	const handleClear = () => {
-		setTripDetails(prev => ({
-			...prev,
-			tripPrompt: ''
-		}));
+		setTripPrompt("");
 	};
 
 	// Character counter
 	const maxChars = 500;
-	const charCount = tripDetails.tripPrompt.length;
+	const charCount = tripPrompt.length;
 
 	return (
 		<ThemeProvider theme={memoizedTheme}>
@@ -197,7 +193,7 @@ const PromptInput = () => {
 							variant="contained"
 							color="secondary"
 							size="small"
-							onClick={() => handleChange("Plan a bike trip from chennai to sivakasi take a break for every 3 hour")}
+							onClick={() => setTripPrompt("Plan a bike trip from chennai to sivakasi take a break for every 3 hour")}
 							sx={{
 								borderRadius: "12px",
 								fontWeight: 600,
@@ -219,7 +215,7 @@ const PromptInput = () => {
 							color="secondary"
 							size="small"
 							onClick={() =>
-								handleChange(
+								setTripPrompt(
 									"Plan a car trip from chennai to goa take a break at tea shop for every 3 hour"
 								)
 							}
@@ -248,8 +244,8 @@ const PromptInput = () => {
 							fullWidth
 							multiline
 							rows={5}
-							value={tripDetails.tripPrompt}
-							onChange={(e) => handleChange(e.target.value)}
+							value={tripPrompt}
+							onChange={(e) => setTripPrompt(e.target.value)}
 							placeholder="Describe your bike trip, e.g., 'Ride from San Francisco to Los Angeles along coastal trails, max 100 km/day, with camping spots.'"
 							required
 							sx={{
@@ -278,10 +274,10 @@ const PromptInput = () => {
 							type="submit"
 							variant="contained"
 							color="primary"
-							disabled={tripDetails.isLoading || !tripDetails.tripPrompt.trim()}
+							disabled={isLoading || !tripPrompt.trim()}
 							fullWidth
 							startIcon={
-								tripDetails.isLoading ? (
+								isLoading ? (
 									<CircularProgress
 										size={18}
 										sx={{ color: "#000", marginRight: "8px" }}
@@ -307,16 +303,16 @@ const PromptInput = () => {
 								fontSize: "1.1rem",
 							}}
 							aria-label={
-								tripDetails.isLoading ? "Planning your bike trip" : "Plan my bike trip"
+								isLoading ? "Planning your bike trip" : "Plan my bike trip"
 							}
 						>
-							{tripDetails.isLoading ? "Planning Your Ride..." : "Plan My Ride"}
+							{isLoading ? "Planning Your Ride..." : "Plan My Ride"}
 						</Button>
 						<Button
 							variant="outlined"
 							color="secondary"
 							onClick={handleClear}
-							disabled={tripDetails.isLoading || !tripDetails.tripPrompt}
+							disabled={isLoading || !tripPrompt}
 							sx={{
 								flex: 0.5,
 								borderColor: "#facc15",
@@ -332,6 +328,71 @@ const PromptInput = () => {
 						</Button>
 					</Box>
 				</Box>
+
+				{/* Error Display */}
+				{error && (
+					<Alert severity="error" sx={{ mt: 3, mb: 2, zIndex: 2 }}>
+						{typeof error === 'object' ? JSON.stringify(error) : error}
+					</Alert>
+				)}
+
+				{/* Trip Plan Display */}
+				{route && !isLoading && !error && (
+					<Paper
+						elevation={3}
+						sx={{
+							mt: 4,
+							p: { xs: 2, md: 3 },
+							backgroundColor: "rgba(31, 41, 55, 0.8)", // Slightly transparent dark gray
+							backdropFilter: "blur(5px)",
+							border: "1px solid #4b5563",
+							borderRadius: "12px",
+							zIndex: 2,
+						}}
+					>
+						<Typography variant="h5" gutterBottom sx={{ color: "#facc15", fontWeight: "bold" }}>
+							Your Trip Plan:
+						</Typography>
+						<List dense>
+							<ListItem>
+								<ListItemText primary="Route" secondary={route.summary || "Route details will be shown here."}
+									primaryTypographyProps={{ color: "#facc15" }}
+									secondaryTypographyProps={{ color: "#e5e7eb" }} />
+							</ListItem>
+							<ListItem>
+								<ListItemText primary="Trip Duration" secondary={`${tripDays} day(s)`}
+									primaryTypographyProps={{ color: "#facc15" }}
+									secondaryTypographyProps={{ color: "#e5e7eb" }} />
+							</ListItem>
+							{weather && weather.forecast && (
+								<ListItem>
+									<ListItemText primary="Weather" secondary={weather.forecast}
+										primaryTypographyProps={{ color: "#facc15" }}
+										secondaryTypographyProps={{ color: "#e5e7eb" }} />
+								</ListItem>
+							)}
+							{stops && stops.length > 0 && (
+								<>
+									<Typography variant="h6" sx={{ mt: 2, color: "#facc15", fontWeight: "medium" }}>
+										Recommended Stops:
+									</Typography>
+									<List dense component="div" disablePadding>
+										{stops.map((stop, index) => (
+											<ListItem key={index} sx={{ pl: 2 }}>
+												<ListItemText
+													primary={stop.name || `Stop ${index + 1}`}
+													secondary={stop.reason || stop.description || 'No details'}
+													primaryTypographyProps={{ color: "#e0e0e0" }}
+													secondaryTypographyProps={{ color: "#bdbdbd" }}
+												/>
+											</ListItem>
+										))}
+									</List>
+								</>
+							)}
+						</List>
+					</Paper>
+				)}
 			</Box>
 		</ThemeProvider>
 	);
